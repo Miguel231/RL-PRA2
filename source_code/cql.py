@@ -1,15 +1,15 @@
 from collections import defaultdict
 import random
-from typing import List, DefaultDict
+from typing import List, DefaultDict, Tuple
 
 import numpy as np
 from gymnasium.spaces import Space
 from gymnasium.spaces.utils import flatdim
+import itertools
 
-
-class IQL:
+class CQL:
     """
-    Agent using the Independent Q-Learning algorithm
+    Agent using the Central Q-Learning algorithm
     """
     def __init__(
         self,
@@ -18,13 +18,10 @@ class IQL:
         gamma: float,
         learning_rate: float = 0.5,
         epsilon: float = 1.0,
+        alpha: float = 0.1,
         **kwargs,
     ):
         """
-        Constructor of IQL
-
-        Initializes variables for independent Q-learning agents
-
         :param num_agents (int): number of agents
         :param action_spaces (List[Space]): action spaces of the environment for each agent
         :param gamma (float): discount factor (gamma)
@@ -42,52 +39,63 @@ class IQL:
         self.gamma: float = gamma
         self.learning_rate = learning_rate
         self.epsilon = epsilon
+        self.alpha = alpha
 
-        # initialise Q-tables for all agents
-        # access value of Q_i(o, a) with self.q_tables[i][str((o, a))] (str conversion for hashable obs)
-        self.q_tables: List[DefaultDict] = [
-            defaultdict(lambda: 0) for _ in range(self.num_agents)
-        ]
+        self.q_table = defaultdict(lambda:0.0)
+        self.joint_actions = list(itertools.product(*[range(n) for n in self.n_acts]))
+
+
 
     def act(self, obss) -> List[int]:
         """
-        Implement the epsilon-greedy action selection here for stateless task
-
-        **IMPLEMENT THIS FUNCTION**
-
-        :param obss (List): list of observations for each agent
-        :return (List[int]): index of selected action for each agent
+        Implement the epsilon-greedy action
         """
-        actions = []
-
         ### PUT YOUR CODE HERE ###
-        
-        raise NotImplementedError("Need to implement the act() function of IQL")
-        return actions
+
+        joint_state = tuple(obss)
+        if random.random() < self.epsilon:
+            action = random.choice(self.joint_actions)
+        else:
+            q_values = [float(self.q_table[str((joint_state, tuple(a)))]) for a in self.joint_actions]
+            idx = int(np.argmax(q_values))
+            action = self.joint_actions[idx]
+
+        return list(action)
 
     def learn(
         self,
         obss: List[np.ndarray],
         actions: List[int],
-        rewards: List[float],
+        reward: float,
         n_obss: List[np.ndarray],
         done: bool,
     ):
         """
-        Updates the Q-tables based on agents' experience
+        Updates the Q-tables based on experience
 
         **IMPLEMENT THIS FUNCTION**
 
-        :param obss (List[np.ndarray]): list of observations for each agent
-        :param action (List[int]): index of applied action of each agent
-        :param rewards (List[float]): received reward for each agent
-        :param n_obss (List[np.ndarray]): list of observations after taking the action for each agent
-        :param done (bool): flag indicating whether a terminal state has been reached
-        :return (List[float]): updated Q-values for current actions of each agent
         """
         ### PUT YOUR CODE HERE ###
+        joint_state = tuple(float(x) for obs in obss for x in np.ravel(obs))
+        joint_action = tuple(actions)
+        next_joint_state = tuple(float(x) for obs in n_obss for x in np.ravel(obs))
+        current_q = float(self.q_table[str((joint_state, joint_action))])
 
-        raise NotImplementedError("Need to implement the learn() function of IQL")
+        #penalty
+        q_values = [float(self.q_table[str((joint_state, a))]) for a in self.joint_actions]
+        penalty = np.log(np.sum(np.exp(q_values))) - current_q
+
+        if done:
+            target = reward
+        else:
+            q_values_next = [float(self.q_table[str((next_joint_state, tuple(a)))]) for a in self.joint_actions]
+            target = reward + self.gamma * max(q_values_next)
+
+        target = target - self.alpha * penalty
+        self.q_table[str((joint_state, joint_action))] = current_q + self.learning_rate * (target - current_q)
+
+        return self.q_table[str((joint_state, joint_action))]
 
     def schedule_hyperparameters(self, timestep: int, max_timestep: int):
         """

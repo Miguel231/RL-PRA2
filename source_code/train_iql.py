@@ -5,6 +5,7 @@ import gymnasium as gym
 import numpy as np
 
 from iql import IQL
+from cql import CQL
 from utils import (
     visualise_q_tables,
     visualise_q_convergence,
@@ -25,7 +26,7 @@ CONFIG = {
 }
 
 
-def iql_eval(env, config, q_tables, eval_episodes=500, output=True):
+def iql_eval(env, config, q_tables, eval_episodes=500, output=True, model='IQL'):
     """
     Evaluate configuration of independent Q-learning on given environment when initialised with given Q-table
 
@@ -36,13 +37,25 @@ def iql_eval(env, config, q_tables, eval_episodes=500, output=True):
     :param output (bool): flag whether mean evaluation performance should be printed
     :return (float, float): mean and standard deviation of returns received over episodes
     """
-    eval_agents = IQL(
-        num_agents=env.n_agents,
-        action_spaces=env.action_space,
-        gamma=config["gamma"],
-        learning_rate=config["lr"],
-        epsilon=config["eval_epsilon"],
-    )
+    if model == 'IQL':
+        eval_agents = IQL(
+            num_agents=env.n_agents,
+            action_spaces=env.action_space,
+            gamma=config["gamma"],
+            learning_rate=config["lr"],
+            epsilon=config["eval_epsilon"],
+        )
+    elif model == 'CQL':
+        eval_agents = CQL(
+            num_agents=env.n_agents,
+            action_spaces=env.action_space,
+            gamma=config["gamma"],
+            learning_rate=config["lr"],
+            epsilon=config["eval_epsilon"],
+        )
+    else:
+        raise ValueError("Model not recognized. Choose either 'IQL' or 'CQL'")
+
     eval_agents.q_tables = q_tables
 
     episodic_returns = []
@@ -68,7 +81,7 @@ def iql_eval(env, config, q_tables, eval_episodes=500, output=True):
     return mean_return, std_return
 
 
-def train(env, config, output=True):
+def train(env, config, output=True, model='IQL'):
     """
     Train and evaluate independent Q-learning in env with provided hyperparameters
 
@@ -77,14 +90,25 @@ def train(env, config, output=True):
     :param output (bool): flag if mean evaluation results should be printed
     :return (List[List[float]], List[List[float]], List[Dict[Act, float]]):
     """
-    agents = IQL(
-        num_agents=env.n_agents,
-        action_spaces=env.action_space,
-        gamma=config["gamma"],
-        learning_rate=config["lr"],
-        epsilon=config["init_epsilon"],
-    )
-
+    if model == 'IQL':
+        agents = IQL(
+            num_agents=env.n_agents,
+            action_spaces=env.action_space,
+            gamma=config["gamma"],
+            learning_rate=config["lr"],
+            epsilon=config["init_epsilon"],
+        )
+    elif model == 'CQL':
+        agents = CQL(
+            num_agents=env.n_agents,
+            action_spaces=env.action_space,
+            gamma=config["gamma"],
+            learning_rate=config["lr"],
+            epsilon=config["init_epsilon"],
+        )
+    else:
+        raise ValueError("Model not recognized. Choose either 'IQL' or 'CQL'")
+    
     step_counter = 0
     max_steps = config["total_eps"] * config["ep_length"]
 
@@ -131,8 +155,11 @@ if __name__ == "__main__":
     env = create_pd_game()
     
     # Train and evaluate IQL on the environment
-    evaluation_return_means, evaluation_return_stds, eval_q_tables, q_tables = train(env, CONFIG)
+    evaluation_return_means, evaluation_return_stds, eval_q_tables, q_tables = train(env, CONFIG, model='IQL')
 
+    #train and evaluate CQL on the environment
+    evaluation_return_means_cql, evaluation_return_stds_cql, eval_q_tables_cql, q_tables_cql = train(env, CONFIG, model='CQL')
+    
     # Visualise results
     visualise_q_tables(q_tables)
     visualise_evaluation_returns(evaluation_return_means, evaluation_return_stds)
