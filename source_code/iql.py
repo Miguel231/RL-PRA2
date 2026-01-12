@@ -101,15 +101,19 @@ class IQL:
         """
         ### PUT YOUR CODE HERE ###
         updated_qv = []
+        #for all agents
         for agent in range(self.num_agents):
+            #current values
             obs = obss[agent]
             action = actions[agent]
+            #retrieve q_table
             q_table = self.q_tables[agent]
             current_q = q_table[str((obs,action))] 
-
+            #if the episode is done, the target is just the reward
             if done:
                 target = rewards[agent]
             else:
+                #if not done, target is reward + gamma * max_a' Qnext
                 q_values_next = [q_table[str((n_obss[agent], a))] for a in range(self.n_acts[agent])]
                 target = rewards[agent] + self.gamma * max(q_values_next)
             

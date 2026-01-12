@@ -13,7 +13,7 @@ from utils import (
 )
 from matrix_game import create_pd_game
 
-
+#we use the same configuration for both IQL and CQL
 CONFIG = {
     "seed": 0,
     "gamma": 0.99,
@@ -39,7 +39,7 @@ def eval_policy(env, config, q_data, eval_episodes=500, output=True, model="IQL"
             epsilon=config["eval_epsilon"],
         )
         eval_agents.q_tables = q_data
-
+    #here we add the CQL evaluation in the same function
     elif model == "CQL":
         eval_agents = CQL(
             num_agents=env.n_agents,
@@ -48,6 +48,7 @@ def eval_policy(env, config, q_data, eval_episodes=500, output=True, model="IQL"
             learning_rate=config["lr"],
             epsilon=config["eval_epsilon"],
         )
+        #load the q_table for CQL
         eval_agents.q_table = q_data
 
     else:
@@ -89,6 +90,7 @@ def train(env, config, output=True, model="IQL"):
             learning_rate=config["lr"],
             epsilon=config["init_epsilon"],
         )
+    #here we add the CQL training in the same function
     elif model == "CQL":
         agents = CQL(
             num_agents=env.n_agents,
@@ -121,6 +123,7 @@ def train(env, config, output=True, model="IQL"):
             obss = n_obss
 
         if eps_num > 0 and eps_num % config["eval_freq"] == 0:
+            #here if CQL we pass the q_table instead of q_tables
             q_data = agents.q_tables if model == "IQL" else agents.q_table
 
             mean_return, std_return = eval_policy(
@@ -160,6 +163,7 @@ if __name__ == "__main__":
     visualise_evaluation_returns(eval_means_iql, eval_stds_iql)
     visualise_q_convergence(eval_q_iql, env)
 
+    #I implemented the visualisation of the Q-tables convergence for CQL as well
     # ---------------- CQL ----------------
     eval_means_cql, eval_stds_cql, eval_q_cql, q_cql = train(
         env, CONFIG, model="CQL"

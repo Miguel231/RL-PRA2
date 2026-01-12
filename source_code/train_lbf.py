@@ -5,12 +5,12 @@ import dill
 import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-import lbforaging
+import lbforaging #library for the Foraging envs
 
 from iql import IQL
 from cql import CQL
 
-# ---------------- CONFIGURACIONES ----------------
+# ---------------- CONFIGURATIONS ----------------
 CONFIG_IQL = {
     "seed": 0,
     "gamma": 0.95,
@@ -19,22 +19,23 @@ CONFIG_IQL = {
     "eval_freq": 2000,
     "lr": 0.2,
     "init_epsilon": 0.9,
-    "eval_epsilon": 0.05,
 }
 
 CONFIG_CQL = {
     "seed": 0,
     "gamma": 0.95,
-    "total_eps": 30000,
+    "total_eps": 30000, #we tried 10000, 15000 but results were low
     "ep_length": 50,
     "eval_freq": 2000,
-    "lr": 0.5,
+    "lr": 0.5,          #a lot of problems with learning rate, needed higher
     "init_epsilon": 0.9,
-    "eval_epsilon": 0.05,
 }
 
-# ---------------- FUNCIONES AUXILIARES ----------------
 def evaluate_agent(env, agent, eval_episodes=50):
+    """
+    Evaluates a trained agent over a fixed number of episodes
+    using a greedy policy (epsilon = 0).
+    """
     old_epsilon = agent.epsilon
     agent.epsilon = 0.0
 
@@ -45,9 +46,9 @@ def evaluate_agent(env, agent, eval_episodes=50):
         ep_return = 0
         steps = 0
 
-        while not done and steps < 50:
+        while not done and steps < eval_episodes:
             actions = agent.act(obss)
-            obss, rewards, done, truncated, _ = env.step(actions)
+            obss, rewards, done, _, _ = env.step(actions)
             ep_return += sum(rewards)
             steps += 1
 
@@ -58,8 +59,12 @@ def evaluate_agent(env, agent, eval_episodes=50):
 
 
 def plot_results(episode_returns, eval_returns, eval_episodes, agent_type, env_name, save_dir="plots"):
+    """
+    Plots training and evaluation returns.
+    """
+    
     os.makedirs(save_dir, exist_ok=True)
-
+    #window for smoothing
     window = 100
     smoothed = np.convolve(
         episode_returns,
@@ -87,15 +92,16 @@ def plot_results(episode_returns, eval_returns, eval_episodes, agent_type, env_n
 
 # ---------------- TRAIN ----------------
 def train_agent(env_name, agent_type, config, save_dir="models"):
-    print(f"\n{'='*60}")
+    """
+    Trains an IQL or CQL agent on the specified lbf.
+    """
     print(f"Training {agent_type} on {env_name}")
-    print(f"{'='*60}")
 
     env = gym.make(env_name)
     num_agents = env.n_agents
     action_spaces = [env.action_space[i] for i in range(num_agents)]
 
-    # Crear agente
+    #create agent calling the config parameters
     if agent_type == "IQL":
         agent = IQL(
             num_agents=num_agents,
@@ -116,15 +122,16 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
     episode_returns = []
     eval_returns = []
     eval_episodes_list = []
-
+    
     for ep in tqdm(range(config["total_eps"]), desc=f"{agent_type} Training"):
-        # ---- SCHEDULE ----
+        #here we schedule epsilon and learning rate
         agent.schedule_hyperparameters(ep, config["total_eps"])
 
-        # epsilon minimo
+        #minimum epsilon to ensure some exploration
         agent.epsilon = max(agent.epsilon, 0.05)
 
-        # learning rate decay
+        #learning rate decay, this was added because I have a lot of problems with lr
+        #chatgpt implemented this idea.
         if ep > 0.7 * config["total_eps"]:
             agent.learning_rate = max(
                 0.05,
@@ -135,11 +142,11 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
         done = False
         steps = 0
         ep_return = 0
-
+        #while loop for each episode
         while not done and steps < config["ep_length"]:
             actions = agent.act(obss)
             n_obss, rewards, done, truncated, _ = env.step(actions)
-
+            #agent learns from the transition
             agent.learn(
                 obss=[obss[i] for i in range(num_agents)],
                 actions=actions,
@@ -154,7 +161,7 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
 
         episode_returns.append(ep_return)
 
-        # ---- EVALUACIÓN ----
+        # ---- EVALUATION ----
         if (ep + 1) % config["eval_freq"] == 0:
             mean_eval = evaluate_agent(env, agent)
             eval_returns.append(mean_eval)
@@ -167,8 +174,10 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
                 f"LR: {agent.learning_rate:.3f}"
             )
 
-    # ---- GUARDAR MODELO ----
+    # ---- SAVE MODEL ----
+    #verify save directory exists
     os.makedirs(save_dir, exist_ok=True)
+    #use of dill because with pickle library there were problems
     model_path = os.path.join(
         save_dir,
         f"{agent_type}_{env_name.replace('-', '_')}.pkl"
@@ -178,7 +187,7 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
 
     print(f"Model saved to {model_path}")
 
-    # ---- GRAFICAS ----
+    # ---- PLOT RESULTS ----
     plot_results(
         episode_returns,
         eval_returns,
@@ -193,6 +202,7 @@ def train_agent(env_name, agent_type, config, save_dir="models"):
 
 # ---------------- MAIN ----------------
 def main():
+    #set seeds for reproducibility
     random.seed(0)
     np.random.seed(0)
 
@@ -205,7 +215,7 @@ def main():
         "IQL": CONFIG_IQL,
         "CQL": CONFIG_CQL,
     }
-
+    #train agents for each environment and agent type
     for env_name in environments:
         for agent_type, config in agent_configs.items():
             train_agent(env_name, agent_type, config)
