@@ -196,9 +196,9 @@ def main():
     Main for generating all GIF visualizations.
     """
     generate_all_gifs(
-        models_dir="models",
-        gifs_dir="gifs",
-        num_episodes=3,
+        models_dir="C:\\Users\\migue\\OneDrive\\Escritorio\\UAB_INTELIGENCIA_ARTIFICIAL\\Quart Any\\4A\\Paradigms Machine Learning\\models_PRA2",
+        gifs_dir="gifs2",
+        num_episodes=10,
         fps=5,
     )
 

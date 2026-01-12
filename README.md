@@ -140,6 +140,13 @@ Trained models are saved as `.pkl` files in the `models/` directory:
 The `video.py` script generates:
 - Individual agent GIFs showing behavior in each environment
 
+### Behavior Comparison
+
+| Environment | IQL Agents | CQL Agents |
+|-------------|------------|------------|
+| **Cooperative** | ![IQL Coop](source_code\gifs2\IQL_Foraging_5x5_2p_1f_coop_v3.gif) | ![CQL Coop](source_code\gifs2\CQL_Foraging_5x5_2p_1f_coop_v3.gif) |
+| **Standard** | ![IQL Standard](source_code\gifs2\IQL_Foraging_5x5_2p_1f_v3.gif) | ![CQL Standard](source_code\gifs2\CQL_Foraging_5x5_2p_1f_v3.gif) |
+
 ## 🔬 Experimental Setup
 
 - **Training episodes**: 30,000 per agent
