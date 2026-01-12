@@ -144,8 +144,8 @@ The `video.py` script generates:
 
 | Environment | IQL Agents | CQL Agents |
 |-------------|------------|------------|
-| **Cooperative** | ![IQL Coop](source_code/gifs2/IQL_Foraging_5x5_2p_1f_coop_v3.gif) | ![CQL Coop](source_code/gifs2/CQL_Foraging_5x5_2p_1f_coop_v3.gif) |
-| **Standard** | ![IQL Standard](source_code/gifs2/IQL_Foraging_5x5_2p_1f_v3.gif) | ![CQL Standard](source_code/gifs2/CQL_Foraging_5x5_2p_1f_v3.gif) |
+| **Cooperative** | ![IQL Coop](source_code/gifs/IQL_Foraging_5x5_2p_1f_coop_v3.gif) | ![CQL Coop](source_code/gifs/CQL_Foraging_5x5_2p_1f_coop_v3.gif) |
+| **Standard** | ![IQL Standard](source_code/gifs/IQL_Foraging_5x5_2p_1f_v3.gif) | ![CQL Standard](source_code/gifs/CQL_Foraging_5x5_2p_1f_v3.gif) |
 
 ## 🔬 Experimental Setup
 
