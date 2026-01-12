@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Trained models
+models/
+*.pkl
+
+# Plots and gifs
+plots/
+gifs/
+*.gif
+*.png
+
+# OS
+.DS_Store
+Thumbs.db
